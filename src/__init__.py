@@ -1,3 +1,3 @@
 from loguru import logger
 
-logger.add("../logs/logfile")
+logger.add("../logs/logfile.log")
