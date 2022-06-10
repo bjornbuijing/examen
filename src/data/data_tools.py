@@ -1,6 +1,7 @@
 import random
 from pathlib import Path
-from typing import Callable, Iterator, List, Optional, Sequence, Tuple
+from tqdm import tqdm
+from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Dict
 
 import numpy as np
 
@@ -68,6 +69,50 @@ class BaseDataset:
     def __getitem__(self, idx: int) -> Tuple:
         return self.dataset[idx]
 
+class EuroSatDataset(BaseDataset):
+    def __init__(self, paths: List[Path]) -> None:
+        """
+        This dataset is stored as a dictionary instead of a list.
+        The dictionary stores int : List[Path] key-value pairs
+        the key is a class, the value is a list of paths of an identical class
+        eg:
+
+        dataset = {
+            0 : ["path/to/a/01.jpg", "path/to/a/02.jpg"],
+            1 : ["path/to/b/03.jpg", "path/to/b/04.jpg"]
+        }
+
+        Args:
+            paths (List[Path]): filepaths, where the class name is the parent folder
+        """
+        self.paths = paths
+        random.shuffle(self.paths)
+        self.dataset: Dict[int, np.ndarray] = {}
+        self.name_mapping : Dict[str, int] = {}
+        self.process_data()
+
+    def __len__(self) -> int:
+        return NotImplementedError
+
+    def process_data(self) -> None:
+        for path in tqdm(self.paths):
+            class_name = path.parent.name
+            if class_name not in self.name_mapping:
+                self.name_mapping[class_name] = len(self.name_mapping)
+
+            # add key-value pairs to self.dataset
+            # the key is the class integer from name_mapping,
+            # the value is the current List of Paths 
+            # if there is no value for the key, return an empty List
+            key = None
+            value = None
+
+            # we append to the list
+            self.dataset[key] = value + [path]
+        
+        # and cast everything to a numpy array at the end
+        for key in self.dataset:
+            self.dataset[key] = np.array(self.dataset[key])
 
 class BaseDatastreamer:
     """This datastreamer wil never stop
