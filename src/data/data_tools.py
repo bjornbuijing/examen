@@ -1,10 +1,14 @@
 import random
+from datetime import datetime
 from itertools import combinations
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple
 
 import numpy as np
-import tifffile
+import pandas as pd
+from loguru import logger
+
+# import tifffile
 from tqdm import tqdm
 
 from src.typehinting import DictDataset, ListDataset
@@ -52,6 +56,19 @@ def iter_valid_paths(path: Path, formats: List[str]) -> Tuple[Iterator, List[str
     paths = (path for path in walk if path.suffix in formats)
     return paths, class_names
 
+
+def dir_add_timestamp(log_dir: Optional[Path] = None) -> Path:
+    if log_dir is None:
+        log_dir = Path(".")
+    log_dir = Path(log_dir)
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M")
+    log_dir = log_dir / timestamp
+    logger.info(f"Logging to {log_dir}")
+    if not log_dir.exists():
+        log_dir.mkdir(parents=True)
+    return log_dir
+
+
 class BaseDataset(ListDataset):
     """The main responsibility of the Dataset class is to load the data from disk
     and to offer a __len__ method and a __getitem__ method
@@ -72,11 +89,13 @@ class BaseDataset(ListDataset):
     def __getitem__(self, idx: int) -> Tuple:
         return self.dataset[idx]
 
+
 class StyleDataset(BaseDataset):
     def process_data(self) -> None:
         path = self.paths[0]
         data = pd.read_feather(path, columns=["sentence", "label"])
         self.dataset = list(data.to_records(index=False))
+
 
 class BaseDictDataset(DictDataset):
     """The main responsibility of the Dataset class is to load the data from disk
@@ -163,6 +182,7 @@ class GenericStreamer:
     def stream(self) -> Iterator:
         raise NotImplementedError
 
+
 class BaseDatastreamer(GenericStreamer):
     """This datastreamer wil never stop
     The dataset should have a:
@@ -205,6 +225,7 @@ class BaseDatastreamer(GenericStreamer):
                 X, Y = zip(*batch)  # noqa N806
             yield X, Y
 
+
 class SiameseStreamer(GenericStreamer):
     def __init__(
         self,
@@ -238,10 +259,10 @@ class SiameseStreamer(GenericStreamer):
         Returns
         - equal (int): this is a random class key from which to pick similar images
         - same (List[np.array]) : this is a list of indexes.
-            You can use an index to get two images from the class 
-        - i and j (int). Two different class keys 
+            You can use an index to get two images from the class
+        - i and j (int). Two different class keys
         - other (List[Tuple]). A list of tuples, every tuple contains two indexes,
-            one from class i, one from class j 
+            one from class i, one from class j
         """
 
         rng = np.random.default_rng()
@@ -273,7 +294,7 @@ class SiameseStreamer(GenericStreamer):
         Returns:
             Sequence[Tuple]: _description_
         """
-        batch = []
+        batch: List = []
         (same, equal), (other, (i, j)) = self.random_index()
 
         # retrieve the arrays with paths from the three classes:
