@@ -138,6 +138,7 @@ class EuroSatDataset(BaseDictDataset):
         super().__init__(paths)
 
     def __len__(self) -> int:
+        # TODO ~ about one - two lines of code
         raise NotImplementedError
 
     def process_data(self) -> None:
@@ -150,10 +151,11 @@ class EuroSatDataset(BaseDictDataset):
             # the key is the class integer from name_mapping,
             # the value is the current List of Paths
             # if there is no value for the key, return an empty List
+            # TODO ~ finish these 2 lines of code below
             key: int = None
             value: np.ndarray = None
 
-            # we append to the array
+            # we append the new path to the values we already had
             self.dataset[key] = np.append(value, np.array([path]))
 
 
@@ -300,17 +302,20 @@ class SiameseStreamer(GenericStreamer):
         # retrieve the arrays with paths from the three classes:
         #   - the equal class
         #   - the different classes i and j
+        # TODO ~three lines of code
 
         for idx in same:
             # append to the batch a tuple (img1, img2, 1)
             # use tifffile to read the image
             # cast the image to np.int32
+            # TODO ~ 4 till 5 lines of code
             self.index += 1
 
         for idx in other:
             # append to the batch a tuple (img1, img2, 0)
             # use tifffile to read the image
             # cast the image to np.int32
+            # TODO ~ 4 till 5 lines of code
             self.index += 1
 
         random.shuffle(batch)
