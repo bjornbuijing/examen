@@ -1,8 +1,9 @@
 import random
 from datetime import datetime
 from itertools import combinations
+import tifffile
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple  # noqa E501
 
 import numpy as np
 import pandas as pd
@@ -34,7 +35,7 @@ def walk_dir(path: Path) -> Iterator:
         yield p.resolve()
 
 
-def iter_valid_paths(path: Path, formats: List[str]) -> Tuple[Iterator, List[str]]:
+def iter_valid_paths(path: Path, formats: List[str]) -> Tuple[Iterator, List[str]]:  # noqa E501
     """
     Gets all paths in folders and subfolders
     strips the classnames assuming that the subfolders are the classnames
@@ -73,20 +74,19 @@ class BaseDataset(ListDataset):
     """The main responsibility of the Dataset class is to load the data from disk
     and to offer a __len__ method and a __getitem__ method
     """
-
-    def __init__(self, paths: List[Path]) -> None:
+    def __init__(self, paths: List[Path]) -> None:   # noqa ANN101
         self.paths = paths
         random.shuffle(self.paths)
         self.dataset: List = []
         self.process_data()
 
-    def process_data(self) -> None:
+    def process_data(self) -> None:   # noqa ANN101
         raise NotImplementedError
 
     def __len__(self) -> int:
         return len(self.dataset)
 
-    def __getitem__(self, idx: int) -> Tuple:
+    def __getitem__(self, idx: int) -> Tuple:   # noqa ANN101
         return self.dataset[idx]
 
 
@@ -98,7 +98,7 @@ class StyleDataset(BaseDataset):
 
 
 class BaseDictDataset(DictDataset):
-    """The main responsibility of the Dataset class is to load the data from disk
+    """The main responsibility of the Dataset class is to load the data from disk  # noqa E501
     and to offer a __len__ method and a __getitem__ method
     """
 
@@ -133,17 +133,18 @@ class EuroSatDataset(BaseDictDataset):
         }
 
         Args:
-            paths (List[Path]): filepaths, where the class name is the parent folder
+            paths (List[Path]): filepaths, where the class name is the parent folder  # noqa E501
         """
         super().__init__(paths)
 
-    def __len__(self) -> int:
-        # TODO ~ about one - two lines of code
-        raise NotImplementedError
+    def __len__(self) -> int: # noqa ANN101
+        return len(self.paths)
 
-    def process_data(self) -> None:
+    def process_data(self) -> None: # noqa ANN101
+        self.dataset.clear()
         for path in tqdm(self.paths):
             class_name = path.parent.name
+
             if class_name not in self.name_mapping:
                 self.name_mapping[class_name] = len(self.name_mapping)
 
@@ -152,11 +153,11 @@ class EuroSatDataset(BaseDictDataset):
             # the value is the current List of Paths
             # if there is no value for the key, return an empty List
             # TODO ~ finish these 2 lines of code below
-            key: int = None
-            value: np.ndarray = None
+            key: int = self.name_mapping[class_name]
+            value: np.ndarray = self.dataset.get(key, np.array([]))
 
             # we append the new path to the values we already had
-            self.dataset[key] = np.append(value, np.array([path]))
+            self.dataset[key] = np.append(value, np.array(path))
 
 
 class GenericStreamer:
@@ -168,20 +169,20 @@ class GenericStreamer:
     """
 
     def __init__(
-        self,
+        self,  # noqa ANN101
         batchsize: int,
         preprocessor: Optional[Callable] = None,
     ) -> None:
         self.batchsize = batchsize
         self.preprocessor = preprocessor
 
-    def reset_index(self) -> None:
+    def reset_index(self) -> None:  # noqa ANN101
         raise NotImplementedError
 
-    def batchloop(self) -> Sequence[Tuple]:
+    def batchloop(self) -> Sequence[Tuple]:  # noqa ANN101
         raise NotImplementedError
 
-    def stream(self) -> Iterator:
+    def stream(self) -> Iterator:  # noqa ANN101
         raise NotImplementedError
 
 
@@ -242,7 +243,7 @@ class SiameseStreamer(GenericStreamer):
 
         # the number of classes
         self.n: int = len(self.dataset.name_mapping)
-        # precalculated combinations of all possible different classes combinations
+        # precalculated combinations of all possible different classes combinations  # noqa E501
         self.different = list(combinations([*range(self.n)], 2))
 
         assert batchsize % 2 == 0, "batchsize must be a multiple of 2"
@@ -253,17 +254,17 @@ class SiameseStreamer(GenericStreamer):
 
     def random_index(
         self,
-    ) -> Tuple[Tuple[List[Any], int], Tuple[List[Tuple[Any, Any]], Tuple[int, int]]]:
+    ) -> Tuple[Tuple[List[Any], int], Tuple[List[Tuple[Any, Any]], Tuple[int, int]]]:  # noqa E501
         """This function generates a batch with:
         50% of batchsize with indexes from the same class
         50% of batchsize with indexes from two different classes
 
         Returns
-        - equal (int): this is a random class key from which to pick similar images
+        - equal (int): this is a random class key from which to pick similar images  # noqa E501
         - same (List[np.array]) : this is a list of indexes.
             You can use an index to get two images from the class
         - i and j (int). Two different class keys
-        - other (List[Tuple]). A list of tuples, every tuple contains two indexes,
+        - other (List[Tuple]). A list of tuples, every tuple contains two indexes,  # noqa E501
             one from class i, one from class j
         """
 
@@ -303,12 +304,24 @@ class SiameseStreamer(GenericStreamer):
         #   - the equal class
         #   - the different classes i and j
         # TODO ~three lines of code
+        # --------------------------------
+        eqvals = self.dataset[equal]
+        ivals = self.dataset[i]
+        jvals = self.dataset[j]
+
+        # --------------------------------
 
         for idx in same:
             # append to the batch a tuple (img1, img2, 1)
             # use tifffile to read the image
             # cast the image to np.int32
             # TODO ~ 4 till 5 lines of code
+            # --------------------------------
+            l1, l2 = eqvals[idx]
+            x1 = np.int32(tifffile.imread(l1))
+            x2 = np.int32(tifffile.imread(l2))
+            batch.append(tuple([x1, x2, 1]))
+            # --------------------------------
             self.index += 1
 
         for idx in other:
@@ -316,6 +329,14 @@ class SiameseStreamer(GenericStreamer):
             # use tifffile to read the image
             # cast the image to np.int32
             # TODO ~ 4 till 5 lines of code
+            # --------------------------------
+            l1, l2 = ivals[idx[0]], jvals[idx[1]]
+            x1 = np.int32(tifffile.imread(l1))
+            x2 = np.int32(tifffile.imread(l2))
+            batch.append(tuple([x1, x2, 0]))
+            # and extract from class i the 0th path (idx[0]),
+            # and from class j also the 0th path (idx[1]))
+            # --------------------------------
             self.index += 1
 
         random.shuffle(batch)
@@ -323,7 +344,9 @@ class SiameseStreamer(GenericStreamer):
         return batch
 
     def stream(self) -> Iterator:
+        test = 0
         while True:
+            test = test + 1
             if self.index > (self.size - self.batchsize):
                 self.reset_index()
             batch = self.batchloop()

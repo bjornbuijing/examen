@@ -53,7 +53,7 @@ class Accuracy(Metric):
         return "Accuracy"
 
     def __call__(self, y: Tensor, yhat: Tensor) -> Tensor:
-        return (yhat.argmax(dim=1) == y).sum() / len(yhat)
+        return (yhat.argmax(dim=4) == y).sum() / len(yhat)
 
 
 class F1Score(Metric):
