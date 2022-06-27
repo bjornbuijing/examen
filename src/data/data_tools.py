@@ -1,12 +1,21 @@
 import random
 from datetime import datetime
 from itertools import combinations
-import tifffile
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple  # noqa E501
+from typing import (  # noqa E501
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 import numpy as np
 import pandas as pd
+import tifffile
 from loguru import logger
 
 # import tifffile
@@ -35,7 +44,9 @@ def walk_dir(path: Path) -> Iterator:
         yield p.resolve()
 
 
-def iter_valid_paths(path: Path, formats: List[str]) -> Tuple[Iterator, List[str]]:  # noqa E501
+def iter_valid_paths(
+    path: Path, formats: List[str]
+) -> Tuple[Iterator, List[str]]:  # noqa E501
     """
     Gets all paths in folders and subfolders
     strips the classnames assuming that the subfolders are the classnames
@@ -74,19 +85,20 @@ class BaseDataset(ListDataset):
     """The main responsibility of the Dataset class is to load the data from disk
     and to offer a __len__ method and a __getitem__ method
     """
-    def __init__(self, paths: List[Path]) -> None:   # noqa ANN101
+
+    def __init__(self, paths: List[Path]) -> None:  # noqa ANN101
         self.paths = paths
         random.shuffle(self.paths)
         self.dataset: List = []
         self.process_data()
 
-    def process_data(self) -> None:   # noqa ANN101
+    def process_data(self) -> None:  # noqa ANN101
         raise NotImplementedError
 
     def __len__(self) -> int:
         return len(self.dataset)
 
-    def __getitem__(self, idx: int) -> Tuple:   # noqa ANN101
+    def __getitem__(self, idx: int) -> Tuple:  # noqa ANN101
         return self.dataset[idx]
 
 
@@ -137,10 +149,10 @@ class EuroSatDataset(BaseDictDataset):
         """
         super().__init__(paths)
 
-    def __len__(self) -> int: # noqa ANN101
+    def __len__(self) -> int:  # noqa ANN101
         return len(self.paths)
 
-    def process_data(self) -> None: # noqa ANN101
+    def process_data(self) -> None:  # noqa ANN101
         self.dataset.clear()
         for path in tqdm(self.paths):
             class_name = path.parent.name
@@ -254,7 +266,9 @@ class SiameseStreamer(GenericStreamer):
 
     def random_index(
         self,
-    ) -> Tuple[Tuple[List[Any], int], Tuple[List[Tuple[Any, Any]], Tuple[int, int]]]:  # noqa E501
+    ) -> Tuple[
+        Tuple[List[Any], int], Tuple[List[Tuple[Any, Any]], Tuple[int, int]]
+    ]:  # noqa E501
         """This function generates a batch with:
         50% of batchsize with indexes from the same class
         50% of batchsize with indexes from two different classes

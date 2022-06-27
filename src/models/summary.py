@@ -1,10 +1,12 @@
-from trax.layers.combinators import Serial as Traxmodel
-from numpy import ndarray
 from typing import Union
+
 import jax.numpy as jnp
+from numpy import ndarray
+from trax.layers.combinators import Serial as Traxmodel
 from trax.shapes import signature
 
 Array = Union[jnp.ndarray, ndarray]
+
 
 def summary(
     model: Traxmodel, X: Array, init: int = 1, counter: int = 0  # noqa N803
