@@ -1,0 +1,6 @@
+{'vocab': 19308, 'hidden_size': 128, 'features': 50, 'output_size': 4, 'dropout': 0.1}Serial[
+  Embedding_19308_128
+  LSTM_128
+  Mean
+  Dense_4
+]
